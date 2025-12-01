@@ -2,7 +2,7 @@
 
 #include "config.hpp"
 #include <SDL3/SDL_rect.h>
-#include <set>
+#include <vector>
 
 namespace rog
 {
@@ -30,6 +30,6 @@ struct RenderItem
     }
 };
 
-using RenderList = std::multiset<RenderItem>;
+using RenderList = std::vector<RenderItem>;
 
 } // namespace rog

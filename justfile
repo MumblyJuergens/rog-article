@@ -22,12 +22,25 @@ profile:
     valgrind --tool=cachegrind ./rog_article
     ls -Atr | tail -n 1 | xargs -I{} cg_annotate {} | less
 
+[working-directory: 'build/Release']
+profile-release:
+    valgrind --tool=cachegrind ./rog_article
+    ls -Atr | tail -n 1 | xargs -I{} cg_annotate {} | less
+
+
 [working-directory: 'build/Debug']
 perf-stat:
+    perf stat -B -e cache-misses,cache-references ./rog_article
+
+[working-directory: 'build/Release']
+perf-stat-release:
     perf stat -B -e cache-misses,cache-references ./rog_article
 
 [working-directory: 'build/Debug']
 perf-report:
     perf record -B -e cache-misses,cache-references ./rog_article
     perf report -Mintel 
+
+clean TYPE='Debug':
+    cmake --build build/{{TYPE}} --target clean
 

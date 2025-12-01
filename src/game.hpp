@@ -99,6 +99,8 @@ class Game
             entity->render(_render_items);
         }
 
+        std::sort(_render_items.begin(), _render_items.end());
+
         SDL_RenderClear(_renderer);
 
         for (auto &item : _render_items)

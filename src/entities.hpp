@@ -24,7 +24,7 @@ class Floor : public Entity
         {
             for (int x{}; x < 30; ++x)
             {
-                render_list.insert({
+                render_list.push_back({
                     .tile_index = 1,
                     .position = {x, y},
                     .layer = 0,
@@ -39,7 +39,7 @@ class Player : public Entity
   public:
     void render(RenderList &render_list) override
     {
-        render_list.insert({
+        render_list.push_back({
             .tile_index = 0,
             .position = {2, 2},
             .tile_extent = {1, 2},
@@ -56,7 +56,7 @@ class Goblin : public Entity
 
     void render(RenderList &render_list) override
     {
-        render_list.insert({
+        render_list.push_back({
             .tile_index = 2,
             .position = position,
         });
