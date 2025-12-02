@@ -10,7 +10,7 @@
 #include <SDL3_image/SDL_image.h>
 #include <cstdint>
 #include <fstream>
-#include <memory>
+#include <variant>
 #include <vector>
 
 namespace rog
@@ -21,7 +21,7 @@ class Game
     bool _should_quit = false;
     bool _is_fps_testing = false;
     RenderList _render_items;
-    std::vector<std::unique_ptr<Entity>> _entities;
+    std::vector<std::variant<Player, Goblin>> _entities;
     Floor _floor;
     SDL_Texture *_floor_texture{};
 
@@ -58,8 +58,8 @@ class Game
                           static_cast<int>(_tmap_size.y) / config::tile_size<int>};
 
         _floor_texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
-                                           config::map_size_pixels<int>,
-                                           config::map_size_pixels<int>);
+                                           config::map_size_pixels<int>, config::map_size_pixels<int>);
+        SDL_SetTextureScaleMode(_floor_texture, SDL_SCALEMODE_NEAREST);
 
         // Application should print a bunch of 1's on startup, if you get 0's something has gone bad.
         SDL_Log("Verify load: %d %d %d %d %d %d %d %d %d", _window != nullptr, _renderer != nullptr, file.good(),
@@ -96,8 +96,11 @@ class Game
         renderlist_render(floor_render_list);
         SDL_SetRenderTarget(_renderer, nullptr);
 
-        _entities.push_back(std::make_unique<Player>());
-        _entities.push_back(std::make_unique<Goblin>(4, 2));
+        _entities.push_back(Player{});
+        for (int i = 0; i < 50; ++i)
+        {
+            _entities.push_back(Goblin{i % config::map_size<int> + 1, i / config::map_size<int> + 3});
+        }
     }
     void update()
     {
@@ -106,7 +109,7 @@ class Game
 
         for (auto &entity : _entities)
         {
-            entity->update();
+            std::visit([](auto &e) { entity_update(e); }, entity);
         }
     }
 
@@ -137,12 +140,12 @@ class Game
     {
         SDL_RenderClear(_renderer);
 
-        const SDL_FRect floor_dst { 0.0f, 0.0f, config::map_size_pixels<float>, config::map_size_pixels<float> };
+        const SDL_FRect floor_dst{0.0f, 0.0f, config::map_size_pixels<float>, config::map_size_pixels<float>};
         SDL_RenderTexture(_renderer, _floor_texture, nullptr, &floor_dst);
 
         for (auto &entity : _entities)
         {
-            entity->render_submit(_render_items);
+            std::visit([this](auto &e) { entity_render_submit(e, _render_items); }, entity);
         }
 
         std::sort(_render_items.begin(), _render_items.end());

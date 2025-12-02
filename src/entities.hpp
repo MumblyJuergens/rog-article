@@ -9,14 +9,6 @@
 namespace rog
 {
 
-class Entity
-{
-  public:
-    virtual ~Entity() = default;
-    virtual void update() {};
-    virtual void render_submit([[maybe_unused]] RenderList &render_list) {}
-};
-
 class Floor
 {
     std::vector<int> _tile_indices;
@@ -40,34 +32,40 @@ class Floor
             }
         }
     }
-
 };
 
-class Player : public Entity
+void entity_render_submit([[maybe_unused]] const auto &self, [[maybe_unused]] RenderList &render_list) {}
+
+void entity_update([[maybe_unused]] const auto &self) {}
+
+class Player
 {
+    int _tile_index{0};
+    SDL_Point _starting_position{2, 2};
+    SDL_Point _tile_extent{1, 2};
+
   public:
-    void render_submit(RenderList &render_list) override
+    friend void entity_render_submit(const Player &self, RenderList &render_list)
     {
         render_list.push_back({
-            .tile_index = 0,
-            .position = {2, 2},
-            .tile_extent = {1, 2},
+            .tile_index = self._tile_index,
+            .position = self._starting_position,
+            .tile_extent = self._tile_extent,
         });
     }
 };
 
-class Goblin : public Entity
+class Goblin
 {
-    SDL_Point position;
+    SDL_Point _position;
 
   public:
-    Goblin(int x, int y) : position{x, y} {}
-
-    void render_submit(RenderList &render_list) override
+    Goblin(int x, int y) : _position{x, y} {}
+    friend void entity_render_submit(const Goblin &self, RenderList &render_list)
     {
         render_list.push_back({
             .tile_index = 2,
-            .position = position,
+            .position = self._position,
         });
     }
 };
