@@ -21,7 +21,8 @@ class Game
     bool _should_quit = false;
     bool _is_fps_testing = false;
     RenderList _render_items;
-    std::vector<std::variant<Player, Goblin>> _entities;
+    Player _player;
+    std::vector<Goblin> _entities;
     Floor _floor;
     SDL_Texture *_floor_texture{};
 
@@ -96,7 +97,6 @@ class Game
         renderlist_render(floor_render_list);
         SDL_SetRenderTarget(_renderer, nullptr);
 
-        _entities.push_back(Player{});
         for (int i = 0; i < 50; ++i)
         {
             _entities.push_back(Goblin{i % config::map_size<int> + 1, i / config::map_size<int> + 3});
@@ -106,11 +106,6 @@ class Game
     {
         _fps_timer.fps_tick();
         if (_is_fps_testing) _microsecs_work.begin_activity();
-
-        for (auto &entity : _entities)
-        {
-            std::visit([](auto &e) { entity_update(e); }, entity);
-        }
     }
 
     void renderlist_render(RenderList &render_list)
@@ -143,9 +138,10 @@ class Game
         const SDL_FRect floor_dst{0.0f, 0.0f, config::map_size_pixels<float>, config::map_size_pixels<float>};
         SDL_RenderTexture(_renderer, _floor_texture, nullptr, &floor_dst);
 
+        _player.render_submit(_render_items);
         for (auto &entity : _entities)
         {
-            std::visit([this](auto &e) { entity_render_submit(e, _render_items); }, entity);
+            entity.render_submit(_render_items);
         }
 
         std::sort(_render_items.begin(), _render_items.end());

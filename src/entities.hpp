@@ -34,9 +34,6 @@ class Floor
     }
 };
 
-void entity_render_submit([[maybe_unused]] const auto &self, [[maybe_unused]] RenderList &render_list) {}
-
-void entity_update([[maybe_unused]] const auto &self) {}
 
 class Player
 {
@@ -45,12 +42,12 @@ class Player
     SDL_Point _tile_extent{1, 2};
 
   public:
-    friend void entity_render_submit(const Player &self, RenderList &render_list)
+    void render_submit(RenderList &render_list)
     {
         render_list.push_back({
-            .tile_index = self._tile_index,
-            .position = self._starting_position,
-            .tile_extent = self._tile_extent,
+            .tile_index = _tile_index,
+            .position = _starting_position,
+            .tile_extent = _tile_extent,
         });
     }
 };
@@ -61,11 +58,11 @@ class Goblin
 
   public:
     Goblin(int x, int y) : _position{x, y} {}
-    friend void entity_render_submit(const Goblin &self, RenderList &render_list)
+    void render_submit(RenderList &render_list)
     {
         render_list.push_back({
             .tile_index = 2,
-            .position = self._position,
+            .position = _position,
         });
     }
 };
