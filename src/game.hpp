@@ -20,6 +20,7 @@ class Game
     bool _is_fps_testing = false;
     RenderList _render_items;
     std::vector<std::unique_ptr<Entity>> _entities;
+    Floor _floor;
 
     SDL_Window *_window{};
     SDL_Renderer *_renderer{};
@@ -50,7 +51,8 @@ class Game
 
         SDL_SetTextureScaleMode(_tilemap, SDL_SCALEMODE_NEAREST);
         SDL_GetTextureSize(_tilemap, &_tmap_size.x, &_tmap_size.y);
-        _tmap_size_int = {static_cast<int>(_tmap_size.x) / config::tile_size<int>, static_cast<int>(_tmap_size.y) / config::tile_size<int>};
+        _tmap_size_int = {static_cast<int>(_tmap_size.x) / config::tile_size<int>,
+                          static_cast<int>(_tmap_size.y) / config::tile_size<int>};
 
         // Application should print a bunch of 1's on startup, if you get 0's something has gone bad.
         SDL_Log("Verify load: %d %d %d %d %d %d %d %d", _window != nullptr, _renderer != nullptr, file.good(),
@@ -76,8 +78,9 @@ class Game
 
     void setup_level()
     {
+        _floor.load();
+        _floor.prepare_geometry(_tmap_size_int);
         _entities.push_back(std::make_unique<Player>());
-        _entities.push_back(std::make_unique<Floor>());
         _entities.push_back(std::make_unique<Goblin>(4, 2));
     }
 
@@ -96,12 +99,13 @@ class Game
     {
         for (auto &entity : _entities)
         {
-            entity->render(_render_items);
+            entity->render_submit(_render_items);
         }
 
         std::sort(_render_items.begin(), _render_items.end());
 
         SDL_RenderClear(_renderer);
+        _floor.render(_renderer, _tilemap);
 
         for (auto &item : _render_items)
         {
