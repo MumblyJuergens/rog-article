@@ -20,82 +20,27 @@ class Entity
 class Floor
 {
     std::vector<int> _tile_indices;
-    std::vector<SDL_Vertex> _vertices;
-    static constexpr SDL_Point _map_size{30, 30};
 
   public:
     // In production this would be generated or loaded from a file,
     // currently we just fake it.
-    void load() { _tile_indices.resize(_map_size.x * _map_size.y, 1); }
+    void load() { _tile_indices.resize(config::map_size<size_t> * config::map_size<size_t>, 1); }
 
-    void prepare_geometry(SDL_Point tilemap_size)
+    void render_submit(RenderList &render_list)
     {
-        std::vector<SDL_Vertex> vertices(30 * 30 * 6);
-        const SDL_FColor color{1.0f, 1.0f, 1.0f, 1.0f};
-
-        const SDL_FPoint uv_tile_size{
-            .x = 1.0f / static_cast<float>(tilemap_size.x),
-            .y = 1.0f / static_cast<float>(tilemap_size.y),
-        };
-
-        for (size_t n = 0; n < _map_size.x * _map_size.y; ++n)
+        for (size_t y = 0; y < config::map_size<size_t>; ++y)
         {
-
-            const SDL_FPoint pos = {static_cast<float>(n % _map_size.x) * config::tile_size<float>,
-                                    static_cast<float>(n / _map_size.x) * config::tile_size<float>};
-
-            const SDL_FPoint uv_offset{
-                .x = static_cast<float>(_tile_indices[n] % tilemap_size.x) * uv_tile_size.x,
-                .y = static_cast<float>(_tile_indices[n] / tilemap_size.x) * uv_tile_size.y,
-            };
-
-            const size_t i = n * 6;
-
-            // Left-Top.
-            vertices[i + 0] = {
-                .position = {pos.x, pos.y},
-                .color = color,
-                .tex_coord = {uv_offset.x, uv_offset.y},
-            };
-            // Right-Top
-            vertices[i + 1] = {
-                .position = {pos.x + config::tile_size<float>, pos.y},
-                .color = color,
-                .tex_coord = {uv_offset.x + uv_tile_size.x, uv_offset.y},
-            };
-            // Left-Bottom.
-            vertices[i + 2] = {
-                .position = {pos.x, pos.y + config::tile_size<float>},
-                .color = color,
-                .tex_coord = {uv_offset.x, uv_offset.y + uv_tile_size.y},
-            };
-            // Right-Top
-            vertices[i + 3] = {
-                .position = {pos.x + config::tile_size<float>, pos.y},
-                .color = color,
-                .tex_coord = {uv_offset.x + uv_tile_size.x, uv_offset.y},
-            };
-            // Right-Bottom.
-            vertices[i + 4] = {
-                .position = {pos.x + config::tile_size<float>, pos.y + config::tile_size<float>},
-                .color = color,
-                .tex_coord = {uv_offset.x + uv_tile_size.x, uv_offset.y + uv_tile_size.y},
-            };
-            // Left-Bottom.
-            vertices[i + 5] = {
-                .position = {pos.x, pos.y + config::tile_size<float>},
-                .color = color,
-                .tex_coord = {uv_offset.x, uv_offset.y + uv_tile_size.y},
-            };
+            for (size_t x = 0; x < config::map_size<size_t>; ++x)
+            {
+                render_list.push_back({
+                    .tile_index = _tile_indices[y * config::map_size<size_t> + x],
+                    .position = {static_cast<int>(x), static_cast<int>(y)},
+                    .layer = 0,
+                });
+            }
         }
-
-        _vertices.swap(vertices);
     }
 
-    void render(SDL_Renderer *renderer, SDL_Texture *texture)
-    {
-        SDL_RenderGeometry(renderer, texture, _vertices.data(), static_cast<int>(_vertices.size()), nullptr, 0);
-    }
 };
 
 class Player : public Entity

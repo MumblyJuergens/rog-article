@@ -5,6 +5,8 @@
 #include "renderlist.hpp"
 #include "timer.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
 #include <cstdint>
 #include <fstream>
@@ -21,6 +23,7 @@ class Game
     RenderList _render_items;
     std::vector<std::unique_ptr<Entity>> _entities;
     Floor _floor;
+    SDL_Texture *_floor_texture{};
 
     SDL_Window *_window{};
     SDL_Renderer *_renderer{};
@@ -54,15 +57,21 @@ class Game
         _tmap_size_int = {static_cast<int>(_tmap_size.x) / config::tile_size<int>,
                           static_cast<int>(_tmap_size.y) / config::tile_size<int>};
 
+        _floor_texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                                           config::map_size_pixels<int>,
+                                           config::map_size_pixels<int>);
+
         // Application should print a bunch of 1's on startup, if you get 0's something has gone bad.
-        SDL_Log("Verify load: %d %d %d %d %d %d %d %d", _window != nullptr, _renderer != nullptr, file.good(),
-                tmap_data.size() > 0, tmap_surface != nullptr, _tilemap != nullptr, _tmap_size.x > 0, _tmap_size.y > 0);
+        SDL_Log("Verify load: %d %d %d %d %d %d %d %d %d", _window != nullptr, _renderer != nullptr, file.good(),
+                tmap_data.size() > 0, tmap_surface != nullptr, _tilemap != nullptr, _tmap_size.x > 0, _tmap_size.y > 0,
+                _floor_texture != nullptr);
 
         SDL_DestroySurface(tmap_surface);
     }
 
     ~Game()
     {
+        SDL_DestroyTexture(_floor_texture);
         SDL_DestroyTexture(_tilemap);
         SDL_DestroyRenderer(_renderer);
         SDL_DestroyWindow(_window);
@@ -79,11 +88,17 @@ class Game
     void setup_level()
     {
         _floor.load();
-        _floor.prepare_geometry(_tmap_size_int);
+        SDL_SetRenderTarget(_renderer, _floor_texture);
+        RenderList floor_render_list;
+        floor_render_list.reserve(config::map_size<size_t> * config::map_size<size_t>);
+        SDL_RenderClear(_renderer);
+        _floor.render_submit(floor_render_list);
+        renderlist_render(floor_render_list);
+        SDL_SetRenderTarget(_renderer, nullptr);
+
         _entities.push_back(std::make_unique<Player>());
         _entities.push_back(std::make_unique<Goblin>(4, 2));
     }
-
     void update()
     {
         _fps_timer.fps_tick();
@@ -95,19 +110,9 @@ class Game
         }
     }
 
-    void render()
+    void renderlist_render(RenderList &render_list)
     {
-        for (auto &entity : _entities)
-        {
-            entity->render_submit(_render_items);
-        }
-
-        std::sort(_render_items.begin(), _render_items.end());
-
-        SDL_RenderClear(_renderer);
-        _floor.render(_renderer, _tilemap);
-
-        for (auto &item : _render_items)
+        for (auto &item : render_list)
         {
             SDL_FRect src{
                 .x = static_cast<float>(item.tile_index % _tmap_size_int.x) * config::tile_size<float>,
@@ -126,6 +131,22 @@ class Game
             SDL_RenderTexture(_renderer, _tilemap, &src, &dst);
         }
         _render_items.clear();
+    }
+
+    void render()
+    {
+        SDL_RenderClear(_renderer);
+
+        const SDL_FRect floor_dst { 0.0f, 0.0f, config::map_size_pixels<float>, config::map_size_pixels<float> };
+        SDL_RenderTexture(_renderer, _floor_texture, nullptr, &floor_dst);
+
+        for (auto &entity : _entities)
+        {
+            entity->render_submit(_render_items);
+        }
+
+        std::sort(_render_items.begin(), _render_items.end());
+        renderlist_render(_render_items);
 
         if (_is_fps_testing) _microsecs_work.end_activity();
 
