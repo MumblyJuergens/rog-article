@@ -14,6 +14,8 @@ find_package(SDL3_image)
 # For FullCompilerWarnings
 include(cmake/helpers.cmake)
 
+add_subdirectory(bench)
+
 add_executable(rog_article src/main.cpp)
 target_compile_features(rog_article PRIVATE cxx_std_23)
 target_link_libraries(rog_article PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)

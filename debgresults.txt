@@ -1,0 +1,9 @@
+-----------------------------------------------------------
+Benchmark                 Time             CPU   Iterations
+-----------------------------------------------------------
+BM_VirtualInline        961 ns          957 ns       727238
+BM_VirtualExtern        923 ns          920 ns       759229
+BM_VariantInline       2182 ns         2174 ns       320695
+BM_VariantExtern       1922 ns         1915 ns       365559
+BM_EtaggedInline        417 ns          415 ns      1949431
+BM_EtaggedExtern        376 ns          374 ns      1870664
